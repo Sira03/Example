@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div class="vis-weather">
+        <h1>서울 날씨</h1>
+        <ul class="list-group list-group-flush weather"
+            style="font-weight: 600;">
+            <!-- <li class="list-group-item weather"></li> -->
+        </ul>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.4.min.js" integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8=" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+<script language=javascript>
+    $(document).ready(function() {
+        var arr = [];
+        var today = new Date();
+        var week = new Array('일', '월', '화', '수', '목', '금', '토');
+        var year = today.getFullYear();
+        var month = today.getMonth() + 1;
+        var day = today.getDate();
+        var hours = today.getHours();
+        var minutes = today.getMinutes();
+        var hours_al = new Array('02', '05', '08', '11', '14', '17', '20', '23');
+        
+        var korea = [ 
+
+            {'region' : '종로구','nx' : 60,'ny' : 127}, 
+            {'region' : '중구','nx' : 60,'ny' : 127}, 
+            {'region' : '용산구','nx' : 60,'ny' : 126}, 
+            {'region' : '성동구','nx' : 61,'ny' : 126}, 
+            {'region' : '광진구','nx' : 62,'ny' : 126}, 
+            {'region' : '동대문구','nx' : 61,'ny' : 127}, 
+            {'region' : '중랑구','nx' : 62,'ny' : 127}, 
+            {'region' : '성북구','nx' : 61,'ny' : 127}, 
+            {'region' : '강북구','nx' : 61,'ny' : 128}, 
+            {'region' : '도봉구','nx' : 61,'ny' : 129}, 
+            {'region' : '노원구','nx' : 61,'ny' : 129}, 
+            {'region' : '은평구','nx' : 59,'ny' : 127}, 
+            {'region' : '서대문구','nx' : 59,'ny' : 127}, 
+            {'region' : '마포구','nx' : 59,'ny' : 126}, 
+            {'region' : '양천구','nx' : 58,'ny' : 126}, 
+            {'region' : '강서구','nx' : 58,'ny' : 126}, 
+            {'region' : '구로구','nx' : 58,'ny' : 125}, 
+            {'region' : '금천구','nx' : 59,'ny' : 124}, 
+            {'region' : '영등포구','nx' : 59,'ny' : 125}, 
+            {'region' : '동작구','nx' : 59,'ny' : 125}, 
+            {'region' : '관악구','nx' : 59,'ny' : 125}, 
+            {'region' : '서초구','nx' : 60,'ny' : 125}, 
+            {'region' : '강남구','nx' : 61,'ny' : 125}, 
+            {'region' : '송파구','nx' : 62,'ny' : 125}, 
+            {'region' : '강동구','nx' : 63,'ny' : 126}
+            
+            ]
+
+        /* $('.weather-date').html(
+                month + "월 " + day + "일 "
+                        + week[today.getDay()] + "요일"); */
+
+        /* 동네예보 시간이 0200 0500 ... 3시간 단위로 23시까지 */
+        for (var i = 0; i < hours_al.length; i++) {
+            var h = hours_al[i] - hours;
+            if (h == -1 || h == 0 || h == -2) {
+                var now = hours_al[i];
+            }
+            if (hours == 00) {
+                var now = hours_al[7];
+            }
+        }
+
+        /* example
+         * 9시 -> 09시 변경 필요
+         */
+        if (hours < 10) {
+            hours = '0' + hours;
+        }
+        if (month < 10) {
+            month = '0' + month;
+        }
+        if (day < 10) {
+            day = '0' + day;
+        }
+
+        today = year + "" + month + "" + day;
+
+        /* 좌표 */
+        $.each(korea,function(j, k) {
+                            var _nx = korea[j].nx, _ny = korea[j].ny, region = korea[j].region, 
+                            apikey = "tLDXG%2BJZWmMT4yXxY5la2w2N3Qak1evKd2ZR475nCc%2FAI2S4%2FKIRuBGMCvLNBnlUi7%2Fulm4b5jBDreiYzi0eCA%3D%3D", 
+                            ForecastGribURL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst";
+                            ForecastGribURL += "?ServiceKey=" + apikey;
+                            ForecastGribURL += "&base_date=" + today;
+                            ForecastGribURL += "&base_time=" + now + "00";
+                            ForecastGribURL += "&nx=" + _nx + "&ny=" + _ny;
+                            arr.push({'url' : ForecastGribURL, 'region' : region});
+
+                            $.ajax({
+                                        url : arr[j].url,
+                                        type : 'GET',
+                                        success : function(data) {
+                                            var $data = $(data).find("response>body>items>item");
+                                            var cate = '';
+                                            var temp = '';
+                                            var sky = '';
+                                            var rain = '';
+
+                                            $.each($data,function(i,o) {
+                                                                cate = $(o).find("category").text(); // 카테고리 목록    
+
+                                                                if (cate == 'TMP') {
+                                                                    temp = $(this).find("fcstValue").text(); // 1시간 온도
+                                                                }
+                                                                if (cate == 'SKY') {
+                                                                    sky = $(this).find("fcstValue").text(); // 하늘상태
+                                                                }
+                                                                if (cate == 'PTY') {
+                                                                    rain = $(this).find("fcstValue").text(); // 강수형태
+                                                                }
+                                                            });
+
+                                            $('.weather').append('<li class="list-group-item weather_li'+j+'"></li>');
+                                            $('.weather_li' + j).addClass('in' + j);
+                                            $('.in' + j).html(temp + " ℃"); //온도 
+                                            $('.in' + j).prepend(arr[j].region + '&emsp;'); // 지역이름
+
+                                            if (rain != 0) {
+                                                switch (rain) {
+                                                case '1':
+                                                    $('.in' + j).append(" / 비");
+                                                    $('.in' + j).prepend('<i class="fas fa-cloud-showers-heavy"></i>&emsp;');
+                                                    break;
+                                                case '2':
+                                                    $('.in' + j).append(" / 비/눈");
+                                                    $('.in' + j).prepend('<i class="fas fa-cloud-rain"></i>&emsp;');
+                                                    break;
+                                                case '3':
+                                                    $('.in' + j).append(" / 눈");
+                                                    $('.in' + j).prepend('<i class="fas fa-snowflake"></i>&emsp;');
+                                                    break;
+                                                }
+                                            } else {
+                                                switch (sky) {
+                                                case '1':
+                                                    $('.in' + j).append(" / 맑음");
+                                                    $('.in' + j).prepend('<i class="fas fa-sun"></i>&emsp;');
+                                                    break;
+                                                case '2':
+                                                    $('.in' + j).append(" / 구름조금");
+                                                    $('.in' + j).prepend('<i class="fas fa-cloud-sun"></i>&emsp;');
+                                                    break;
+                                                case '3':
+                                                    $('.in' + j).append(" / 구름많음");
+                                                    $('.in' + j).prepend('<i class="fas fa-cloud"></i>&emsp;');
+                                                    break;
+                                                case '4':
+                                                    $('.in' + j).append(" / 흐림");
+                                                    $('.in' + j).prepend( '<i class="fas fa-smog"></i>&emsp;');
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    });
+                        });
+                        console.log(today);
+    });
+</script>
+</body>
+</html>
